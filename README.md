@@ -1,6 +1,6 @@
 ###VS_CodeCoverage_HtmlReport .v1.0
 
-####LINQPad C# Program File
+####LINQPad C# Program File: Generator.linq
 
 #####Needs:
 - Visual Studio .coveragexml file to read the data
