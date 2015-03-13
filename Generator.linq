@@ -1,5 +1,3 @@
-<Query Kind="Program" />
-
 void Main()
 {
 	var CodeCoverageFilePath = @"< path to the .coveragexml file >";
@@ -7,22 +5,23 @@ void Main()
 	
 	//Read and Generate Data
 	var AddModulesData = true;
-	var AddNamespacesData = false;
+	var AddNamespacesData = true;
 	var AddClassesData = true;
 	var AddMethodsData = false;
 	var coverageData = new CodeCoverageDataReader(CodeCoverageFilePath, AddModulesData, AddNamespacesData, AddClassesData, AddMethodsData);
 	
 	//Print Data on Html
 	var htmlReporter = new HtmlReportWriter(coverageData, CodeCoverageHtmlPath);
-	htmlReporter.PrintModulesHtmlFile("CodeCoverageData.html");
+	htmlReporter.PrintIndexHtmlFile();
+	htmlReporter.PrintClassesHtmlFiles();
 }
 
 public class HtmlReportWriter{
 
 	#region Fields
 	
-	private CodeCoverageDataReader coverageData;
-	private string projectPath;
+	private CodeCoverageDataReader CodeCoverageData;
+	private string CodeCoverageHtmlPath;
 	private string HtmlStart = "<!DOCTYPE html>" + 
 		"<html xmlns=\"http://www.w3.org/1999/xhtml\">" +
 		"<head>" +
@@ -37,23 +36,23 @@ public class HtmlReportWriter{
 	private string HtmlTitle;
 	private string HtmlEnd = "</body>" +
 		"</html>";
-	private string ModulesHtmlTableStartCode = "<table style=\"width:100%; border: 1px solid black;\">";
-	private string ModulesHtmlTableHeaders = "<tr>" +
+	private string HtmlTableStartCode = "<table style=\"width:70%;\" align=\"center\">";
+	private string ModulesHtmlIndexTableHeaders = "<tr>" +
 		"<th>Name</th>" +
 		"<th>Blocks Covered</th>" +
 		"<th>Blocks Not Covered</th>" +
 		"<th>Blocks Covered (%)</th>" +
 		"<th>Blocks Not Covered (%)</th>" +
 		"</tr>";
-	private string ModulesHtmlTableEndCode = "</table>";
+	private string HtmlTableEndCode = "</table>";
 	
 	#endregion
 
 	#region constructor
 	
 	public HtmlReportWriter(CodeCoverageDataReader data, string path){
-		this.coverageData = data;
-		this.projectPath = path;
+		this.CodeCoverageData = data;
+		this.CodeCoverageHtmlPath = path;
 	}
 	
 	#endregion
@@ -61,27 +60,63 @@ public class HtmlReportWriter{
 	#region Methods
 	
 	private string GenerateModulesHtmlTableCode(){
-		return this.ModulesHtmlTableStartCode +
-			this.ModulesHtmlTableHeaders +
-			this.coverageData.ModulesHtmlTableContent +
-			this.ModulesHtmlTableEndCode;
+		return this.HtmlTableStartCode +
+			this.ModulesHtmlIndexTableHeaders +
+			this.CodeCoverageData.ModulesHtmlTableContent +
+			this.HtmlTableEndCode;
 	}
 	
-	public void PrintModulesHtmlFile(string fileName){
-	
+	public void PrintIndexHtmlFile(){
+		if(!Directory.Exists(this.CodeCoverageHtmlPath)){
+			Directory.CreateDirectory(this.CodeCoverageHtmlPath);
+		}
 		var modulesHtmlTableContent = GenerateModulesHtmlTableCode();
-		this.HtmlTitle = "<h1 style=\"text-align:center\"> " + this.coverageData.fileName + " </h1><br><br>";
-		
-		using (FileStream fs = new FileStream(projectPath + fileName, FileMode.Create)) 
+		this.HtmlTitle = "<h1 style=\"text-align:center\"> " + this.CodeCoverageData.fileName + " </h1><br><br>";
+		using (FileStream fs = new FileStream(CodeCoverageHtmlPath + "Index.html", FileMode.Create)) 
 		{ 
 			using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)) 
 			{ 
-				w.WriteLine(HtmlStart);
-				w.WriteLine(HtmlTitle);
+				w.WriteLine(this.HtmlStart);
+				w.WriteLine(this.HtmlTitle);
 				w.WriteLine(modulesHtmlTableContent);
-				w.WriteLine(HtmlEnd);
+				w.WriteLine(this.HtmlEnd);
 			} 
 		} 
+	}
+	
+	public void PrintClassesHtmlFiles(){
+		CodeCoverageData.ModulesData.ForEach(module => {
+			module.NamespacesTableData.ForEach(nameSpace => {
+				nameSpace.ClassesData.ForEach(classe => {
+					this.HtmlTitle = "<h1 style=\"text-align:center\"> " + classe.ClassName + " </h1><br><br>";
+					var path = string.Empty;
+					if (this.CodeCoverageHtmlPath[this.CodeCoverageHtmlPath.Length-1].Equals(@"\")){
+						path = this.CodeCoverageHtmlPath + @"Classes\";
+					}else{
+						path = this.CodeCoverageHtmlPath + @"\Classes\";
+					}
+					if(!Directory.Exists(path)){
+						Directory.CreateDirectory(path);
+					}
+					path = path + classe.ClassName + ".html";
+					try
+					{ 
+						using (FileStream fs = new FileStream(path, FileMode.Create)) {
+							using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)) { 
+								w.WriteLine(this.HtmlStart);
+								w.WriteLine(this.HtmlTitle);
+								w.WriteLine(this.HtmlTableStartCode);
+								classe.ClassFileLinesData.ForEach(line => w.WriteLine(line));
+								w.WriteLine(this.HtmlTableEndCode);
+								w.WriteLine(this.HtmlEnd);
+							} 
+						}
+					}catch(Exception e){
+						Console.WriteLine("ERROR [ Caracteres inválidos ]: can't write a file with the path: " + path);
+					}
+				});
+			});
+		});
 	}
 	
 	#endregion
@@ -159,7 +194,7 @@ public class CodeCoverageDataReader{
 			var filePath = item.Element("SourceFileName").Value;
 			var pathParts = filePath.Split('\\');
 			fileData.Name = pathParts[pathParts.Length - 1];
-			fileData.Path = filePath.Replace(fileData.Name,"");
+			fileData.Path = filePath;
 			dataList.Add(fileData);
 		});
 		return dataList;
@@ -488,6 +523,7 @@ public class ClassData{
 		this.AddMethodsRowsData = addMethodsData;
 		this.GetClassData(classe, filesData);
 		this.GenerateHtmlTableRowCode();
+		this.GenerateClassFileHtmlCode();
 	}
 	
 	#endregion
@@ -576,6 +612,13 @@ public class ClassData{
 		set;
     }
 	
+	//Html Class File Data
+	public List<string> ClassFileLinesData
+	{
+		get;
+		set;
+	}
+	
 	#endregion
 	
 	#region Methods
@@ -604,7 +647,7 @@ public class ClassData{
 	private void GenerateHtmlTableRowCode(){
 		if (this.AddClassesRowsData){
 			this.HtmlTableRowCode = "<tr>" +
-				"<td style=\"background:#99C2D6; text-align: left;\">" + this.Spaces + this.Spaces + this.HtmlBlackDot + "Class: " + this.ClassName + "</td>" +
+				"<td style=\"background:#99C2D6; text-align: left;\">" + this.Spaces + this.Spaces + this.HtmlBlackDot + "<a href=\"./Classes/" + this.ClassName + ".html"  + "\">Class: " + this.ClassName + "</a></td>" +
 				"<td style=\"background:#CCCCCC; text-align: center;\">" + this.BlocksCovered + "</td>" +
 				"<td style=\"background:#CCCCCC; text-align: center;\">" + this.BlocksNotCovered + "</td>" +
 				"<td style=\"background:#66E066; text-align: center;\">" + this.BlocksCoveredPercentage + "</td>" +
@@ -614,6 +657,53 @@ public class ClassData{
 		this.MethodsData.ForEach(item => {
 			this.HtmlTableRowCode += item.HtmlTableRowCode;
 		});
+	}
+	
+	private void GenerateClassFileHtmlCode(){
+		var fileData = GetClassFileData();
+		this.ClassFileLinesData = GetLinesFromFile(fileData.Path);
+		this.MethodsData.ForEach(method => {
+			method.LinesData.ForEach(line => {
+				var number = Int32.Parse(line.LnStart);
+				var lineStr = this.ClassFileLinesData[number-1];
+				var coverage = Int32.Parse(line.Coverage);
+				if (coverage == 0){
+					this.ClassFileLinesData[number-1] = this.ClassFileLinesData[number-1].Replace("99C2D6","66E066");
+					this.ClassFileLinesData[number-1] = this.ClassFileLinesData[number-1].Replace("B8D4E2","85E685");
+				}else{
+					this.ClassFileLinesData[number-1] = this.ClassFileLinesData[number-1].Replace("99C2D6","FF4D4D");
+					this.ClassFileLinesData[number-1] = this.ClassFileLinesData[number-1].Replace("B8D4E2","FF8282");
+				}
+			});
+		});
+	}
+	
+	private FileData GetClassFileData(){
+		if (this.MethodsData != null){
+			var someMethodsData = this.MethodsData[0];
+			if (someMethodsData.LinesData != null){
+				var someLineData = someMethodsData.LinesData[0];
+				return someLineData.SourceFileData;
+			}
+		}
+		return null;
+	}
+	
+	private List<string> GetLinesFromFile(string filePath){
+		var lines = new List<string>();
+		var file = new System.IO.StreamReader(filePath);
+		var line = string.Empty;
+		var count = 0;
+		while((line = file.ReadLine()) != null)
+		{
+			lines.Add("<tr>" +
+				"<td style=\"background:#99C2D6; text-align: center;\"> " + (count+1) + " </td>" +
+    			"<td style=\"background:#B8D4E2;\"> " + line.Replace(" ","&nbsp;") + " </td>" +
+				"</tr>");
+			count++;
+		}
+		file.Close();
+		return lines;
 	}
 	
 	#endregion
