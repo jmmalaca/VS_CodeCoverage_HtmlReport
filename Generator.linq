@@ -47,18 +47,16 @@ public class HtmlReportWriter{
 		"<link rel=\"stylesheet\" type=\"text/css\" href=\"./Classes/GlobalStyles.css\">" +
 		"</head>" + 
 		"<body>";
-		
-		private string DivIndexContentTable = "<div class=\"divIndexContentTable\">";
-		private string HtmlIndexTableStart = "<table class=\"indexTable\">";
-		
-		private string ModulesHtmlIndexTableHeaders = "<tr>" +
+	private string DivIndexContentTable = "<div class=\"divIndexContentTable\">";
+	private string HtmlIndexTableStart = "<table class=\"indexTable\">";
+	private string ModulesHtmlIndexTableHeaders = "<tr>" +
 		"<th>Name</th>" +
 		"<th>Blocks Covered</th>" +
 		"<th>Blocks Not Covered</th>" +
 		"<th>Blocks Covered (%)</th>" +
 		"<th>Blocks Not Covered (%)</th>" +
 		"</tr>";
-		
+	
 	#endregion
 	
 	#region Html Classes Files
@@ -75,12 +73,35 @@ public class HtmlReportWriter{
 		"<link rel=\"stylesheet\" type=\"text/css\" href=\"GlobalStyles.css\">" +
 		"</head>" + 
 		"<body>";
-		
-		private string DivClassContentStart = "<div class=\"divClassContentTables\">";
-		private string DivClassHeaderTableStart = "<div class=\"divClassHeaderTable\">";
-		private string DivClassCodeTableStart = "<div class=\"divClassCodeTable\">";
-		private string HtmlTableHeaderStartCode = "<table class=\"tableClassHeader\">";
-		private string HtmlTableStartCode = "<table class=\"tableClassCode\">";
+	private string DivClassContentStart = "<div class=\"divClassContentTables\">";
+	private string DivClassHeaderTableStart = "<div class=\"divClassHeaderTable\">";
+	private string DivClassCodeTableStart = "<div class=\"divClassCodeTable\">";
+	private string HtmlTableHeaderStartCode = "<table class=\"tableClassHeader\">";
+	private string HtmlTableStartCode = "<table class=\"tableClassCode\">";
+	
+	#endregion
+	
+	#region Html Errors
+	
+	private string HtmlErrorsStart = "<!DOCTYPE html>" + 
+		"<html xmlns=\"http://www.w3.org/1999/xhtml\">" +
+		"<head>" +
+        "<title>Code Coverage Report</title>" +
+        "<meta charset=\"utf-8\" />" +
+        "<meta name=\"author\" content=\"Jose Miguel Malaca\" />" +
+        "<meta name=\"description\" content=\"Code Coverage Report\" />" +
+        "<meta name=\"keywords\" content=\"code,coverage,report,codecoveragereport,visual,studio,visualstudio\"/>" +
+		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
+		"<link rel=\"stylesheet\" type=\"text/css\" href=\"./Classes/GlobalStyles.css\">" +
+		"</head>" + 
+		"<body>";
+	private string DivErrorsContentTable = "<div class=\"divIndexContentTable\">";
+	private string HtmlErrorsTableStart = "<table class=\"indexTable\">";
+	private string ModulesHtmlErrorsTableHeaders = "<tr>" +
+		"<th>Name</th>" +
+		"<th>Error</th>" +
+		"</tr>";
+	private string ErrorsTableContent;
 	
 	#endregion
 	
@@ -102,6 +123,9 @@ public class HtmlReportWriter{
 		this.PrintIndexHtmlFile();
 		this.PrintClassesHtmlFiles();
 		this.PrintCSSFile();
+		
+		this.ErrorsTableContent = string.Empty;
+		this.PrintErrorsFile();
 	}
 	
 	private void PrintIndexHtmlFile(){
@@ -111,18 +135,24 @@ public class HtmlReportWriter{
 		this.HtmlTitle = "<p class=\"TitleName\">" + this.CodeCoverageData.fileName + " </p>";
 		using (FileStream fs = new FileStream(CodeCoverageHtmlPath + "Index.html", FileMode.Create)) 
 		{ 
-			using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)) 
-			{ 
-				w.WriteLine(this.HtmlStart);
-				w.WriteLine(this.HtmlTitle);
-				w.WriteLine(this.DivIndexContentTable);
-				w.WriteLine(this.HtmlIndexTableStart);
-				w.WriteLine(this.ModulesHtmlIndexTableHeaders);
-				w.WriteLine(this.CodeCoverageData.ModulesHtmlTableContent);
-				w.WriteLine(this.HtmlTableEndCode);
-				w.WriteLine(this.DivEnd);
-				w.WriteLine(this.HtmlEnd);
-			} 
+			try{
+				using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)){ 
+					w.WriteLine(this.HtmlStart);
+					w.WriteLine(this.HtmlTitle);
+					w.WriteLine(this.DivIndexContentTable);
+					w.WriteLine(this.HtmlIndexTableStart);
+					w.WriteLine(this.ModulesHtmlIndexTableHeaders);
+					w.WriteLine(this.CodeCoverageData.ModulesHtmlTableContent);
+					w.WriteLine(this.HtmlTableEndCode);
+					w.WriteLine(this.DivEnd);
+					w.WriteLine(this.HtmlEnd);
+				}
+			}catch(Exception e){
+				ErrorsTableContent += "<tr>" +
+					"<td class=\"tdFileName\" style=\"background:#A2A2A2; text-align: right;\"> Index.html </td>" +
+					"<td class=\"tdError\" style=\"background:#A2A2A2; text-align: left;\">" + e.Message + "</td>" +
+					"</tr>";
+			}
 		} 
 	}
 	
@@ -164,7 +194,10 @@ public class HtmlReportWriter{
 							} 
 						}
 					}catch(Exception e){
-						Console.WriteLine("ERROR [ Caracteres inválidos ]: can't write a file with the path: " + path);
+						ErrorsTableContent += "<tr>" +
+							"<td class=\"tdFileName\" style=\"background:#e0e2ef; text-align: left;\"> " + classe.ClassName + ".html </td>" +
+							"<td class=\"tdError\" style=\"background:#e0e2ef; text-align: left;\">" + e.Message + "</td>" +
+							"</tr>";
 					}
 				});
 			});
@@ -183,7 +216,7 @@ public class HtmlReportWriter{
 		{ 
 			using (FileStream fs = new FileStream(path, FileMode.Create)) {
 				using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)) { 
-					w.WriteLine(".TitleName { color: #454545; font-size:500%; text-align: center; margin:0; padding:4% 0% 4% 0%; } ");
+					w.WriteLine(".TitleName { color: #454545; font-size:30pt; text-align: center; margin:0; padding:4% 0% 4% 0%; } ");
 					
 					w.WriteLine(".divIndexContentTable { position: relative; left: 10%; width: 80%; margin: 0; padding: 0px; border: 0; font-size:14pt; }");
 					w.WriteLine(".indexTable { width: 100%; margin: 0; padding: 0; border: 0; } ");
@@ -193,16 +226,43 @@ public class HtmlReportWriter{
 					w.WriteLine(".divClassHeaderTable { width: 100%; margin: 0; padding: 0; border: 0; }");
 					w.WriteLine(".tableClassHeader { border: 2px solid #4D4D4D; border-collapse: collapse; table-layout: fixed; width: 100%; }");
 					w.WriteLine(".tdClassKeys { border: 2px solid #4D4D4D; width:25%; text-align:right; padding: 3px; }");
-					w.WriteLine(".tdHeader { border: 2px solid #4D4D4D; padding: 3px; }");
+					w.WriteLine(".tdHeader { border: 2px solid #4D4D4D; padding: 3px; word-wrap:break-word; }");
 					
 					w.WriteLine(".divClassCodeTable { width: 100%; margin: 0; padding: 0; border: 0; }");
 					w.WriteLine(".tableClassCode { border: 2px solid #4D4D4D; border-collapse: collapse; table-layout: fixed; width: 100%;}");
 					w.WriteLine(".tdLineNumber { border: 2px solid #4D4D4D; width:5%; text-align:center; padding: 1px; }");
-					w.WriteLine(".tdCode { border: 2px solid #4D4D4D; padding: 1px; overflow: hidden; text-overflow: ellipsis; }");
+					w.WriteLine(".tdCode { border: 2px solid #4D4D4D; padding: 1px; word-wrap:break-word; }");
 				} 
 			}
 		}catch(Exception e){
 			Console.WriteLine("ERROR [ writting CSS ]");
+		}
+	}
+	
+	private void PrintErrorsFile(){
+		if (this.ErrorsTableContent.Length > 0){
+			if(!Directory.Exists(this.CodeCoverageHtmlPath)){
+				Directory.CreateDirectory(this.CodeCoverageHtmlPath);
+			}
+			this.HtmlTitle = "<p class=\"TitleName\"> Errors </p>";
+			using (FileStream fs = new FileStream(CodeCoverageHtmlPath + "errors.html", FileMode.Create)) 
+			{ 
+				try{
+					using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)){ 
+						w.WriteLine(this.HtmlErrorsStart);
+						w.WriteLine(this.HtmlTitle);
+						w.WriteLine(this.DivErrorsContentTable);
+						w.WriteLine(this.HtmlErrorsTableStart);
+						w.WriteLine(this.ErrorsTableContent);
+						w.WriteLine(this.DivErrorsContentTable);
+						w.WriteLine(this.HtmlTableEndCode);
+						w.WriteLine(this.DivEnd);
+						w.WriteLine(this.HtmlEnd);
+					}
+				}catch(Exception e){
+					Console.WriteLine("ERROR [ writting ERRORS file]: " + e.Message);
+				}
+			} 
 		}
 	}
 	
@@ -720,7 +780,9 @@ public class ClassData{
 	
 	private void GetClassData(XElement classe, List<FileData> filesData){
 		this.ClassKeyName = classe.Element("ClassKeyName").Value;
-		this.ClassName = classe.Element("ClassName").Value;
+		
+		this.ClassName = GetValidPathName(classe.Element("ClassName").Value);
+		
 		this.LinesCovered = classe.Element("LinesCovered").Value;
 		this.LinesNotCovered = classe.Element("LinesNotCovered").Value;
 		this.LinesPartiallyCovered = classe.Element("LinesPartiallyCovered").Value;
@@ -737,6 +799,12 @@ public class ClassData{
 		classe.Descendants("Method").ToList().ForEach(method =>{
 			this.MethodsData.Add(new MethodData(method, filesData, this.AddMethodsRowsData));
 		});
+	}
+	
+	private string GetValidPathName(string value){
+		var pattern = @"[^\w]";
+		var rgx = new Regex(pattern);
+		return rgx.Replace(value, @"_");
 	}
 	
 	private void GenerateHtmlTableClassHeader(){
