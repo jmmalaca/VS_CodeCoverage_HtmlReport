@@ -12,8 +12,7 @@ void Main()
 	
 	//Print Data on Html
 	var htmlReporter = new HtmlReportWriter(coverageData, CodeCoverageHtmlPath);
-	htmlReporter.PrintIndexHtmlFile();
-	htmlReporter.PrintClassesHtmlFiles();
+	htmlReporter.Generate();
 }
 
 public class HtmlReportWriter{
@@ -22,6 +21,20 @@ public class HtmlReportWriter{
 	
 	private CodeCoverageDataReader CodeCoverageData;
 	private string CodeCoverageHtmlPath;
+	
+	#region Html Global
+	
+	private string HtmlTitle;
+	private string HtmlSpace = "<br><br>";
+	private string HtmlEnd = "</body>" +
+		"</html>";
+	private string DivEnd = "</div>";
+	private string HtmlTableEndCode = "</table>";
+	
+	#endregion
+	
+	#region Html Index File
+	
 	private string HtmlStart = "<!DOCTYPE html>" + 
 		"<html xmlns=\"http://www.w3.org/1999/xhtml\">" +
 		"<head>" +
@@ -31,20 +44,45 @@ public class HtmlReportWriter{
         "<meta name=\"description\" content=\"Code Coverage Report\" />" +
         "<meta name=\"keywords\" content=\"code,coverage,report,codecoveragereport,visual,studio,visualstudio\"/>" +
 		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
+		"<link rel=\"stylesheet\" type=\"text/css\" href=\"./Classes/GlobalStyles.css\">" +
 		"</head>" + 
 		"<body>";
-	private string HtmlTitle;
-	private string HtmlEnd = "</body>" +
-		"</html>";
-	private string HtmlTableStartCode = "<table style=\"width:70%;\" align=\"center\">";
-	private string ModulesHtmlIndexTableHeaders = "<tr>" +
+		
+		private string DivIndexContentTable = "<div class=\"divIndexContentTable\">";
+		private string HtmlIndexTableStart = "<table class=\"indexTable\">";
+		
+		private string ModulesHtmlIndexTableHeaders = "<tr>" +
 		"<th>Name</th>" +
 		"<th>Blocks Covered</th>" +
 		"<th>Blocks Not Covered</th>" +
 		"<th>Blocks Covered (%)</th>" +
 		"<th>Blocks Not Covered (%)</th>" +
 		"</tr>";
-	private string HtmlTableEndCode = "</table>";
+		
+	#endregion
+	
+	#region Html Classes Files
+	
+	private string HtmlClassStart = "<!DOCTYPE html>" + 
+		"<html xmlns=\"http://www.w3.org/1999/xhtml\">" +
+		"<head>" +
+        "<title>Code Coverage Report</title>" +
+        "<meta charset=\"utf-8\" />" +
+        "<meta name=\"author\" content=\"Jose Miguel Malaca\" />" +
+        "<meta name=\"description\" content=\"Code Coverage Report\" />" +
+        "<meta name=\"keywords\" content=\"code,coverage,report,codecoveragereport,visual,studio,visualstudio\"/>" +
+		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
+		"<link rel=\"stylesheet\" type=\"text/css\" href=\"GlobalStyles.css\">" +
+		"</head>" + 
+		"<body>";
+		
+		private string DivClassContentStart = "<div class=\"divClassContentTables\">";
+		private string DivClassHeaderTableStart = "<div class=\"divClassHeaderTable\">";
+		private string DivClassCodeTableStart = "<div class=\"divClassCodeTable\">";
+		private string HtmlTableHeaderStartCode = "<table class=\"tableClassHeader\">";
+		private string HtmlTableStartCode = "<table class=\"tableClassCode\">";
+	
+	#endregion
 	
 	#endregion
 
@@ -59,36 +97,40 @@ public class HtmlReportWriter{
 	
 	#region Methods
 	
-	private string GenerateModulesHtmlTableCode(){
-		return this.HtmlTableStartCode +
-			this.ModulesHtmlIndexTableHeaders +
-			this.CodeCoverageData.ModulesHtmlTableContent +
-			this.HtmlTableEndCode;
+	public void Generate()
+	{
+		this.PrintIndexHtmlFile();
+		this.PrintClassesHtmlFiles();
+		this.PrintCSSFile();
 	}
 	
-	public void PrintIndexHtmlFile(){
+	private void PrintIndexHtmlFile(){
 		if(!Directory.Exists(this.CodeCoverageHtmlPath)){
 			Directory.CreateDirectory(this.CodeCoverageHtmlPath);
 		}
-		var modulesHtmlTableContent = GenerateModulesHtmlTableCode();
-		this.HtmlTitle = "<h1 style=\"text-align:center\"> " + this.CodeCoverageData.fileName + " </h1><br><br>";
+		this.HtmlTitle = "<p class=\"TitleName\">" + this.CodeCoverageData.fileName + " </p>";
 		using (FileStream fs = new FileStream(CodeCoverageHtmlPath + "Index.html", FileMode.Create)) 
 		{ 
 			using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)) 
 			{ 
 				w.WriteLine(this.HtmlStart);
 				w.WriteLine(this.HtmlTitle);
-				w.WriteLine(modulesHtmlTableContent);
+				w.WriteLine(this.DivIndexContentTable);
+				w.WriteLine(this.HtmlIndexTableStart);
+				w.WriteLine(this.ModulesHtmlIndexTableHeaders);
+				w.WriteLine(this.CodeCoverageData.ModulesHtmlTableContent);
+				w.WriteLine(this.HtmlTableEndCode);
+				w.WriteLine(this.DivEnd);
 				w.WriteLine(this.HtmlEnd);
 			} 
 		} 
 	}
 	
-	public void PrintClassesHtmlFiles(){
+	private void PrintClassesHtmlFiles(){
 		CodeCoverageData.ModulesData.ForEach(module => {
 			module.NamespacesTableData.ForEach(nameSpace => {
 				nameSpace.ClassesData.ForEach(classe => {
-					this.HtmlTitle = "<h1 style=\"text-align:center\"> " + classe.ClassName + " </h1><br><br>";
+					this.HtmlTitle = "<p class=\"TitleName\">" + classe.ClassName + " </p>";
 					var path = string.Empty;
 					if (this.CodeCoverageHtmlPath[this.CodeCoverageHtmlPath.Length-1].Equals(@"\")){
 						path = this.CodeCoverageHtmlPath + @"Classes\";
@@ -103,11 +145,21 @@ public class HtmlReportWriter{
 					{ 
 						using (FileStream fs = new FileStream(path, FileMode.Create)) {
 							using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)) { 
-								w.WriteLine(this.HtmlStart);
-								w.WriteLine(this.HtmlTitle);
-								w.WriteLine(this.HtmlTableStartCode);
-								classe.ClassFileLinesData.ForEach(line => w.WriteLine(line));
-								w.WriteLine(this.HtmlTableEndCode);
+								w.WriteLine(this.HtmlClassStart);
+									w.WriteLine(this.HtmlTitle);
+									w.WriteLine(this.DivClassContentStart);
+										w.WriteLine(this.DivClassHeaderTableStart);
+										w.WriteLine(this.HtmlTableHeaderStartCode);
+										w.WriteLine(classe.HtmlClassTableHeader);
+										w.WriteLine(this.HtmlTableEndCode);
+									w.WriteLine(this.DivEnd);
+									w.WriteLine(this.HtmlSpace);
+									w.WriteLine(this.DivClassCodeTableStart);
+										w.WriteLine(this.HtmlTableStartCode);
+										classe.ClassFileLinesData.ForEach(line => w.WriteLine(line));
+										w.WriteLine(this.HtmlTableEndCode);
+										w.WriteLine(this.DivEnd);
+									w.WriteLine(this.DivEnd);
 								w.WriteLine(this.HtmlEnd);
 							} 
 						}
@@ -117,6 +169,41 @@ public class HtmlReportWriter{
 				});
 			});
 		});
+	}
+	
+	private void PrintCSSFile(){
+		var path = string.Empty;
+		if (this.CodeCoverageHtmlPath[this.CodeCoverageHtmlPath.Length-1].Equals(@"\")){
+			path = this.CodeCoverageHtmlPath + @"Classes\";
+		}else{
+			path = this.CodeCoverageHtmlPath + @"\Classes\";
+		}
+		path = path + "GlobalStyles.css";
+		try
+		{ 
+			using (FileStream fs = new FileStream(path, FileMode.Create)) {
+				using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)) { 
+					w.WriteLine(".TitleName { color: #454545; font-size:500%; text-align: center; margin:0; padding:4% 0% 4% 0%; } ");
+					
+					w.WriteLine(".divIndexContentTable { position: relative; left: 10%; width: 80%; margin: 0; padding: 0px; border: 0; font-size:14pt; }");
+					w.WriteLine(".indexTable { width: 100%; margin: 0; padding: 0; border: 0; } ");
+					
+					w.WriteLine(".divClassContentTables { position: relative; left: 10%; width: 80%; margin: 0; padding: 0; border: 0; font-size:13pt; }");
+					
+					w.WriteLine(".divClassHeaderTable { width: 100%; margin: 0; padding: 0; border: 0; }");
+					w.WriteLine(".tableClassHeader { border: 2px solid #4D4D4D; border-collapse: collapse; table-layout: fixed; width: 100%; }");
+					w.WriteLine(".tdClassKeys { border: 2px solid #4D4D4D; width:25%; text-align:right; padding: 3px; }");
+					w.WriteLine(".tdHeader { border: 2px solid #4D4D4D; padding: 3px; }");
+					
+					w.WriteLine(".divClassCodeTable { width: 100%; margin: 0; padding: 0; border: 0; }");
+					w.WriteLine(".tableClassCode { border: 2px solid #4D4D4D; border-collapse: collapse; table-layout: fixed; width: 100%;}");
+					w.WriteLine(".tdLineNumber { border: 2px solid #4D4D4D; width:5%; text-align:center; padding: 1px; }");
+					w.WriteLine(".tdCode { border: 2px solid #4D4D4D; padding: 1px; overflow: hidden; text-overflow: ellipsis; }");
+				} 
+			}
+		}catch(Exception e){
+			Console.WriteLine("ERROR [ writting CSS ]");
+		}
 	}
 	
 	#endregion
@@ -522,6 +609,7 @@ public class ClassData{
 		this.AddClassesRowsData = addClasses;
 		this.AddMethodsRowsData = addMethodsData;
 		this.GetClassData(classe, filesData);
+		this.GenerateHtmlTableClassHeader();
 		this.GenerateHtmlTableRowCode();
 		this.GenerateClassFileHtmlCode();
 	}
@@ -605,6 +693,13 @@ public class ClassData{
 		set;
     }
 	
+	//Html Class Table Header
+	public string HtmlClassTableHeader
+	{
+		get;
+		set;
+	}
+	
 	//Html Table Row Code
 	public string HtmlTableRowCode
 	{
@@ -642,6 +737,50 @@ public class ClassData{
 		classe.Descendants("Method").ToList().ForEach(method =>{
 			this.MethodsData.Add(new MethodData(method, filesData, this.AddMethodsRowsData));
 		});
+	}
+	
+	private void GenerateHtmlTableClassHeader(){
+		var fileData = GetClassFileData();
+		this.HtmlClassTableHeader = "<tr>" +
+			"<td class=\"tdClassKeys\" style=\"background:#A2A2A2; text-align: right;\"> Class Key Name </td>" +
+			"<td class=\"tdHeader\" style=\"background:#A2A2A2; text-align: left;\">" + this.ClassKeyName + "</td>" +
+			"</tr>" +
+			"<tr>" +
+			"<td class=\"tdClassKeys\" style=\"background:#CCCCCC; text-align: right;\"> Class Name </td>" +
+			"<td class=\"tdHeader\" style=\"background:#CCCCCC; text-align: left;\">" + this.ClassName + "</td>" +
+			"</tr>" +
+			"<tr>" +
+			"<td class=\"tdClassKeys\" style=\"background:#A2A2A2; text-align: right;\"> Lines Covered </td>" +
+			"<td class=\"tdHeader\" style=\"background:#A2A2A2; text-align: left;\">" + this.LinesCovered + "</td>" +
+			"</tr>" +
+			"<tr>" +
+			"<td class=\"tdClassKeys\" style=\"background:#CCCCCC; text-align: right;\"> Lines Not Covered </td>" +
+			"<td class=\"tdHeader\" style=\"background:#CCCCCC; text-align: left;\">" + this.LinesNotCovered + "</td>" +
+			"</tr>" +
+			"<tr>" +
+			"<td class=\"tdClassKeys\" style=\"background:#A2A2A2; text-align: right;\"> Lines Partially Covered </td>" +
+			"<td class=\"tdHeader\" style=\"background:#A2A2A2; text-align: left;\">" + this.LinesPartiallyCovered + "</td>" +
+			"</tr>" +
+			"<tr>" +
+			"<td class=\"tdClassKeys\" style=\"background:#CCCCCC; text-align: right;\"> Blocks Covered </td>" +
+			"<td class=\"tdHeader\" style=\"background:#CCCCCC; text-align: left;\">" + this.BlocksCovered + "</td>" +
+			"</tr>" +
+			"<tr>" +
+			"<td class=\"tdClassKeys\" style=\"background:#A2A2A2; text-align: right;\"> Blocks Not Covered </td>" +
+			"<td class=\"tdHeader\" style=\"background:#A2A2A2; text-align: left;\">" + this.BlocksNotCovered + "</td>" +
+			"</tr>" +
+			"<tr>" +
+			"<td class=\"tdClassKeys\" style=\"background:#CCCCCC; text-align: right;\"> Blocks Covered (%) </td>" +
+			"<td class=\"tdHeader\" style=\"background:#CCCCCC; text-align: left;\">" + this.BlocksCoveredPercentage + "</td>" +
+			"</tr>" +
+			"<tr>" +
+			"<td class=\"tdClassKeys\" style=\"background:#A2A2A2; text-align: right;\"> Blocks Not Covered (%) </td>" +
+			"<td class=\"tdHeader\" style=\"background:#A2A2A2; text-align: left;\">" + this.BlocksNotCoveredPercentage + "</td>" +
+			"</tr>" +
+			"<tr>" +
+			"<td class=\"tdClassKeys\" style=\"background:#CCCCCC; text-align: right;\"> File Path </td>" +
+			"<td class=\"tdHeader\" style=\"background:#CCCCCC; text-align: left;\">" + fileData.Path + "</td>" +
+			"</tr>";
 	}
 	
 	private void GenerateHtmlTableRowCode(){
@@ -696,9 +835,11 @@ public class ClassData{
 		var count = 0;
 		while((line = file.ReadLine()) != null)
 		{
+			line = new Regex(@"\s").Replace(line, "&nbsp;");
+			line = line.Trim();
 			lines.Add("<tr>" +
-				"<td style=\"background:#99C2D6; text-align: center;\"> " + (count+1) + " </td>" +
-    			"<td style=\"background:#B8D4E2;\"> " + line.Replace(" ","&nbsp;") + " </td>" +
+				"<td class=\"tdLineNumber\" style=\"background:#99C2D6; text-align: center;\"> " + (count+1) + " </td>" +
+    			"<td class=\"tdCode\" style=\"background:#B8D4E2;\"> " + line + " </td>" +
 				"</tr>");
 			count++;
 		}
