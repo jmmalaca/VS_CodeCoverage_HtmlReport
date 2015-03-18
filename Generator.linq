@@ -55,7 +55,7 @@ public class HtmlReportWriter{
 		"</head>" + 
 		"<body>";
 	private string DivIndexContentTable = "<div class=\"divIndexContentTable\">";
-	private string HtmlIndexTableStart = "<table class=\"DataTable\">";
+	private string HtmlIndexTableStart = "<table class=\"IndexDataTable\">";
 	private string ModulesHtmlIndexTableHeaders = "<tr>" +
 		"<th>Name</th>" +
 		"<th>Blocks Covered</th>" +
@@ -84,7 +84,7 @@ public class HtmlReportWriter{
 	private string DivClassHeaderTableStart = "<div class=\"divClassHeaderTable\">";
 	private string DivClassCodeTableStart = "<div class=\"divClassCodeTable\">";
 	private string HtmlTableHeaderStartCode = "<table class=\"tableClassHeader\">";
-	private string HtmlTableStartCode = "<table class=\"DataTable\">";
+	private string HtmlTableStartCode = "<table class=\"ClassDataTable\">";
 	
 	#endregion
 	
@@ -293,7 +293,18 @@ public class HtmlReportWriter{
 					w.WriteLine("// This File was generated to contain all the javascript data for the Web Report.");
 					w.WriteLine();
 					w.WriteLine("$(document).ready(function () {");
-					w.WriteLine("	$(\".DataTable tr\").not(':first').hover(function () {");
+					w.WriteLine("	$(\".IndexDataTable tr\").not(':first').hover(function () {");
+					w.WriteLine("		$(this).css({");
+					w.WriteLine("			\"opacity\": 0.7,");
+					w.WriteLine("			\"outline\": \"3px solid black\"");
+					w.WriteLine("		}); ");
+					w.WriteLine("	}, function () {");
+					w.WriteLine("		$(this).css({");
+					w.WriteLine("			\"opacity\": 1,");
+					w.WriteLine("			\"outline\": \"1px solid white\"");
+					w.WriteLine("		}); ");
+					w.WriteLine("	});");
+					w.WriteLine("	$(\".ClassDataTable tr\").hover(function () {");
 					w.WriteLine("		$(this).css({");
 					w.WriteLine("			\"opacity\": 0.7,");
 					w.WriteLine("			\"outline\": \"3px solid black\"");
