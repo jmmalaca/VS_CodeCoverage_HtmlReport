@@ -26,7 +26,14 @@ public class HtmlReportWriter{
 	
 	private string HtmlTitle;
 	private string HtmlSpace = "<br><br>";
-	private string HtmlEnd = "</body>" +
+	private string HtmlEnd = "</body></html>";
+	private string HtmlIndexEnd = "<script src=\"http://code.jquery.com/jquery-1.11.2.min.js\"></script>" + 
+	 	"<script src=\"./Classes/GlobalFunctions.js\"></script>" +
+		"</body>" +
+		"</html>";
+	private string HtmlClassEnd = "<script src=\"http://code.jquery.com/jquery-1.11.2.min.js\"></script>" + 
+	 	"<script src=\"GlobalFunctions.js\"></script>" +
+		"</body>" +
 		"</html>";
 	private string DivEnd = "</div>";
 	private string HtmlTableEndCode = "</table>";
@@ -48,7 +55,7 @@ public class HtmlReportWriter{
 		"</head>" + 
 		"<body>";
 	private string DivIndexContentTable = "<div class=\"divIndexContentTable\">";
-	private string HtmlIndexTableStart = "<table class=\"indexTable\">";
+	private string HtmlIndexTableStart = "<table class=\"DataTable\">";
 	private string ModulesHtmlIndexTableHeaders = "<tr>" +
 		"<th>Name</th>" +
 		"<th>Blocks Covered</th>" +
@@ -77,7 +84,7 @@ public class HtmlReportWriter{
 	private string DivClassHeaderTableStart = "<div class=\"divClassHeaderTable\">";
 	private string DivClassCodeTableStart = "<div class=\"divClassCodeTable\">";
 	private string HtmlTableHeaderStartCode = "<table class=\"tableClassHeader\">";
-	private string HtmlTableStartCode = "<table class=\"tableClassCode\">";
+	private string HtmlTableStartCode = "<table class=\"DataTable\">";
 	
 	#endregion
 	
@@ -123,6 +130,7 @@ public class HtmlReportWriter{
 		this.PrintIndexHtmlFile();
 		this.PrintClassesHtmlFiles();
 		this.PrintCSSFile();
+		this.printJSFile();
 		
 		this.ErrorsTableContent = string.Empty;
 		this.PrintErrorsFile();
@@ -145,7 +153,7 @@ public class HtmlReportWriter{
 					w.WriteLine(this.CodeCoverageData.ModulesHtmlTableContent);
 					w.WriteLine(this.HtmlTableEndCode);
 					w.WriteLine(this.DivEnd);
-					w.WriteLine(this.HtmlEnd);
+					w.WriteLine(this.HtmlIndexEnd);
 				}
 			}catch(Exception e){
 				ErrorsTableContent += "<tr>" +
@@ -176,21 +184,21 @@ public class HtmlReportWriter{
 						using (FileStream fs = new FileStream(path, FileMode.Create)) {
 							using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)) { 
 								w.WriteLine(this.HtmlClassStart);
-									w.WriteLine(this.HtmlTitle);
-									w.WriteLine(this.DivClassContentStart);
-										w.WriteLine(this.DivClassHeaderTableStart);
-										w.WriteLine(this.HtmlTableHeaderStartCode);
-										w.WriteLine(classe.HtmlClassTableHeader);
-										w.WriteLine(this.HtmlTableEndCode);
-									w.WriteLine(this.DivEnd);
-									w.WriteLine(this.HtmlSpace);
-									w.WriteLine(this.DivClassCodeTableStart);
-										w.WriteLine(this.HtmlTableStartCode);
-										classe.ClassFileLinesData.ForEach(line => w.WriteLine(line));
-										w.WriteLine(this.HtmlTableEndCode);
-										w.WriteLine(this.DivEnd);
-									w.WriteLine(this.DivEnd);
-								w.WriteLine(this.HtmlEnd);
+								w.WriteLine(this.HtmlTitle);
+								w.WriteLine(this.DivClassContentStart);
+								w.WriteLine(this.DivClassHeaderTableStart);
+								w.WriteLine(this.HtmlTableHeaderStartCode);
+								w.WriteLine(classe.HtmlClassTableHeader);
+								w.WriteLine(this.HtmlTableEndCode);
+								w.WriteLine(this.DivEnd);
+								w.WriteLine(this.HtmlSpace);
+								w.WriteLine(this.DivClassCodeTableStart);
+								w.WriteLine(this.HtmlTableStartCode);
+								classe.ClassFileLinesData.ForEach(line => w.WriteLine(line));
+								w.WriteLine(this.HtmlTableEndCode);
+								w.WriteLine(this.DivEnd);
+								w.WriteLine(this.DivEnd);
+								w.WriteLine(this.HtmlClassEnd);
 							} 
 						}
 					}catch(Exception e){
@@ -216,6 +224,8 @@ public class HtmlReportWriter{
 		{ 
 			using (FileStream fs = new FileStream(path, FileMode.Create)) {
 				using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)) { 
+					w.WriteLine("/* This File was generated to contain all the CSS data for the Web Report. */");
+					w.WriteLine();
 					w.WriteLine(".TitleName { color: #454545; font-size:30pt; text-align: center; margin:0; padding:4% 0% 4% 0%; } ");
 					
 					w.WriteLine(".divIndexContentTable { position: relative; left: 10%; width: 80%; margin: 0; padding: 0px; border: 0; font-size:14pt; }");
@@ -231,7 +241,9 @@ public class HtmlReportWriter{
 					w.WriteLine(".divClassCodeTable { width: 100%; margin: 0; padding: 0; border: 0; }");
 					w.WriteLine(".tableClassCode { border: 2px solid #4D4D4D; border-collapse: collapse; table-layout: fixed; width: 100%;}");
 					w.WriteLine(".tdLineNumber { border: 2px solid #4D4D4D; width:5%; text-align:center; padding: 1px; }");
-					w.WriteLine(".tdCode { border: 2px solid #4D4D4D; padding: 1px; word-wrap:break-word; }");
+					w.WriteLine(".tdCode { border: 2px solid #4D4D4D; padding: 1px; overflow: hidden; text-overflow: ellipsis; word-wrap:break-word; }");
+					
+					w.WriteLine(".Marker { float: left; padding: 0% 1% 0% 1%; border: 0; margin: 0; }");
 				} 
 			}
 		}catch(Exception e){
@@ -265,6 +277,40 @@ public class HtmlReportWriter{
 			} 
 		}
 	}
+	
+	private void printJSFile(){
+		var path = string.Empty;
+		if (this.CodeCoverageHtmlPath[this.CodeCoverageHtmlPath.Length-1].Equals(@"\")){
+			path = this.CodeCoverageHtmlPath + @"Classes\";
+		}else{
+			path = this.CodeCoverageHtmlPath + @"\Classes\";
+		}
+		path = path + "GlobalFunctions.js";
+		try
+		{ 
+			using (FileStream fs = new FileStream(path, FileMode.Create)) {
+				using (StreamWriter w = new StreamWriter(fs, Encoding.UTF8)) { 
+					w.WriteLine("// This File was generated to contain all the javascript data for the Web Report.");
+					w.WriteLine();
+					w.WriteLine("$(document).ready(function () {");
+					w.WriteLine("	$(\".DataTable tr\").not(':first').hover(function () {");
+					w.WriteLine("		$(this).css({");
+					w.WriteLine("			\"opacity\": 0.7,");
+					w.WriteLine("			\"outline\": \"3px solid black\"");
+					w.WriteLine("		}); ");
+					w.WriteLine("	}, function () {");
+					w.WriteLine("		$(this).css({");
+					w.WriteLine("			\"opacity\": 1,");
+					w.WriteLine("			\"outline\": \"1px solid white\"");
+					w.WriteLine("		}); ");
+					w.WriteLine("	});");
+					w.WriteLine("}); ");
+				} 
+			}
+		}catch(Exception e){
+			Console.WriteLine("ERROR [ writting JS ]");
+		}
+	} 
 	
 	#endregion
 }
@@ -510,7 +556,6 @@ public class NamespaceTableData{
 	private bool AddMethodsRowsData = false;
 	private string Spaces = "&nbsp;&nbsp;&nbsp;";
 	private string HtmlBlackDot = "&#8226;";
-	
 	#endregion
 	
 	#region constructor
