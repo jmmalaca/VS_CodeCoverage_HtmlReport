@@ -7,3 +7,13 @@
 
 If you use the Visual Studio Code Coverage (https://msdn.microsoft.com/en-us/library/dd537628.aspx) you will obtain a report that can be safe to a .coveragexml file.
 This file can be loaded on VS, but if you want to see the results without the VS maybe you will found that this tool is usefull.
+
+#####Generates  ( on a folder path given by you ):
+- index.html
+- Folder Classes
+ - Html file for each class file
+ - GlobalStyle.css
+ - GlobalFunction.js
+
+####Uses:
+- JQuery
