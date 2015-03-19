@@ -15,5 +15,5 @@ This file can be loaded on VS, but if you want to see the results without the VS
  - GlobalStyle.css
  - GlobalFunction.js
 
-####Uses:
+#####Uses:
 - JQuery
